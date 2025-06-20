@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🛒 Product Manager - Dark Mode</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <style>
+    body {
+      background-color: #121212;
+      color: #f5f5f5;
+      font-family: 'Segoe UI', sans-serif;
+      padding: 20px;
+      margin: 0;
+      transition: background-color 0.3s, color 0.3s;
+    }
+
+    h1 {
+      color: #00bcd4;
+    }
+
+    input, button {
+      padding: 10px;
+      margin: 6px 4px;
+      border: none;
+      border-radius: 6px;
+      font-size: 14px;
+    }
+
+    input {
+      background-color: #1e1e1e;
+      color: #f5f5f5;
+      border: 1px solid #333;
+    }
+
+    button {
+      background-color: #00bcd4;
+      color: white;
+      cursor: pointer;
+      transition: background-color 0.2s ease-in-out, transform 0.2s ease-in-out;
+    }
+
+    button:hover {
+      background-color: #0097a7;
+      transform: scale(1.03);
+    }
+
+    .container {
+      max-width: 800px;
+      margin: auto;
+    }
+
+    .item {
+      background-color: #1e1e1e;
+      border: 1px solid #2c2c2c;
+      border-radius: 8px;
+      padding: 15px;
+      margin-top: 10px;
+      box-shadow: 0 0 10px rgba(0, 255, 255, 0.05);
+      transition: transform 0.2s ease-in-out;
+    }
+
+    .item:hover {
+      transform: scale(1.01);
+    }
+
+    .actions {
+      margin-top: 10px;
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .actions input {
+      width: 80px;
+    }
+
+    .theme-toggle {
+      float: right;
+      background: #333;
+      color: #ccc;
+      border: none;
+      padding: 6px 12px;
+      border-radius: 5px;
+      margin-bottom: 10px;
+    }
+
+    /* Light Theme */
+    body.light {
+      background: #f4f4f4;
+      color: #222;
+    }
+
+    body.light input {
+      background: white;
+      color: #222;
+      border-color: #ccc;
+    }
+
+    body.light .item {
+      background: white;
+      color: #222;
+      border-color: #ccc;
+    }
+
+    body.light h1 {
+      color: #0077b6;
+    }
+
+    ::placeholder {
+      color: #aaa;
+    }
+
+    @media (max-width: 600px) {
+      input, button {
+        width: 100%;
+        margin: 6px 0;
+      }
+      .actions {
+        flex-direction: column;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <button class="theme-toggle" onclick="toggleTheme()">🌓 Toggle Theme</button>
+    <h1>🛒 Product Manager</h1>
+
+    <div>
+      <input id="name" placeholder="Product Name" />
+      <input id="quantity" type="number" placeholder="Quantity" />
+      <button onclick="addItem()"><i class="fas fa-plus-circle"></i> Add</button>
+      <button onclick="getItems()"><i class="fas fa-sync"></i> Refresh</button>
+    </div>
+
+    <div id="items"></div>
+  </div>
+
+  <script>
+    const baseURL = "/api/items";
+
+    function toggleTheme() {
+      document.body.classList.toggle("light");
+    }
+
+    async function getItems() {
+      const res = await fetch(baseURL);
+      const data = await res.json();
+      const itemsDiv = document.getElementById("items");
+      itemsDiv.innerHTML = "";
+      data.forEach(item => {
+        itemsDiv.innerHTML += `
+          <div class="item">
+            <strong>${item.name}</strong> - Qty: ${item.quantity}<br>
+            ID: ${item._id}
+            <div class="actions">
+              <input type="number" id="qty-${item._id}" placeholder="New Qty" />
+              <button onclick="updateItem('${item._id}')"><i class="fas fa-edit"></i> Update</button>
+              <button onclick="deleteItem('${item._id}')"><i class="fas fa-trash"></i> Delete</button>
+            </div>
+          </div>
+        `;
+      });
+    }
+
+    async function addItem() {
+      const name = document.getElementById("name").value.trim();
+      const quantity = document.getElementById("quantity").value;
+
+      if (!name || !quantity) {
+        alert("Please enter both product name and quantity.");
+        return;
+      }
+
+      await fetch(baseURL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, quantity })
+      });
+
+      document.getElementById("name").value = "";
+      document.getElementById("quantity").value = "";
+      getItems();
+    }
+
+    async function deleteItem(id) {
+      await fetch(`${baseURL}/${id}`, { method: "DELETE" });
+      getItems();
+    }
+
+    async function updateItem(id) {
+      const qtyInput = document.getElementById(`qty-${id}`);
+      const newQty = qtyInput.value;
+
+      if (!newQty || isNaN(newQty)) {
+        alert("Enter a valid number to update.");
+        return;
+      }
+
+      await fetch(`${baseURL}/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: "Updated Product", quantity: newQty })
+      });
+
+      getItems();
+    }
+
+    // Initial load
+    getItems();
+  </script>
+</body>
+</html>
+
+
+
